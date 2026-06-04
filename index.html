@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Instagram Framer</title>
+  <title>Crop dat</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,7 +17,6 @@
       --muted: #555;
       --muted2: #888;
       --accent: #fff;
-      --snap: rgba(255,255,255,0.55);
       --radius: 10px;
     }
 
@@ -34,7 +33,6 @@
       gap: 28px;
     }
 
-    /* ── Header ── */
     header { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
     h1 {
@@ -62,13 +60,11 @@
 
     #stage-wrap.has-image { cursor: grab; }
     #stage-wrap.has-image:active { cursor: grabbing; }
-
     canvas#preview { width: 100%; height: 100%; display: block; }
 
     /* ── Panel ── */
     .panel { width: min(420px, 100%); display: flex; flex-direction: column; gap: 20px; }
 
-    /* ── Section ── */
     .section { display: flex; flex-direction: column; gap: 10px; }
 
     .section-label {
@@ -81,12 +77,8 @@
 
     /* ── Layout grids ── */
     .layout-row { display: flex; gap: 8px; }
-
-    /* Single photo: 6 items row */
     .layout-row.single { flex-wrap: wrap; }
     .layout-row.single .layout-btn { flex: 1 1 calc(16.66% - 7px); min-width: 0; }
-
-    /* Grid layouts: 4 items */
     .layout-row.grids .layout-btn { flex: 1; }
 
     .layout-btn {
@@ -106,7 +98,6 @@
 
     .layout-btn:hover { border-color: var(--muted2); }
     .layout-btn.active { border-color: #fff; background: #1a1a1a; }
-
     .layout-btn svg { width: 68%; height: 68%; opacity: 0.35; transition: opacity 0.15s; }
     .layout-btn.active svg, .layout-btn:hover svg { opacity: 0.9; }
 
@@ -123,10 +114,19 @@
 
     .layout-btn.active span { color: var(--text); }
 
-    /* ── Slider row ── */
-    .slider-row { display: flex; align-items: center; gap: 12px; }
+    /* ── Zoom row ── */
+    .zoom-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-    .slider-label { font-size: 12px; color: var(--muted2); width: 68px; flex-shrink: 0; }
+    .zoom-row .slider-label {
+      font-size: 12px;
+      color: var(--muted2);
+      width: 68px;
+      flex-shrink: 0;
+    }
 
     input[type=range] {
       flex: 1;
@@ -135,6 +135,7 @@
       background: var(--border);
       border-radius: 2px;
       outline: none;
+      min-width: 0;
     }
 
     input[type=range]::-webkit-slider-thumb {
@@ -145,7 +146,73 @@
       cursor: pointer;
     }
 
-    .slider-value { font-size: 12px; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+    /* Editable zoom value */
+    .zoom-input-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    input#zoom-val {
+      width: 54px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Satoshi', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      text-align: right;
+      padding: 4px 20px 4px 6px;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    input#zoom-val::-webkit-outer-spin-button,
+    input#zoom-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    input#zoom-val:focus { border-color: var(--muted2); }
+
+    .zoom-unit {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    /* ── Quality toggle ── */
+    .quality-toggle {
+      display: flex;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .quality-btn {
+      flex: 1;
+      padding: 7px 0;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted2);
+      transition: background 0.15s, color 0.15s;
+      letter-spacing: 0.04em;
+    }
+
+    .quality-btn.active {
+      background: var(--surface2);
+      color: var(--text);
+      font-weight: 500;
+    }
 
     /* ── Color row ── */
     .color-row { display: flex; align-items: center; gap: 10px; }
@@ -166,13 +233,8 @@
 
     .color-label { font-size: 12px; color: var(--muted2); flex: 1; }
 
-    /* ── Active slot badge ── */
-    #slot-badge {
-      font-size: 11px;
-      color: var(--muted);
-      text-align: right;
-      flex: 1;
-    }
+    /* ── Slot badge ── */
+    #slot-badge { font-size: 11px; color: var(--muted); text-align: right; flex: 1; }
 
     /* ── Divider ── */
     .divider { height: 1px; background: var(--border); }
@@ -196,12 +258,7 @@
     button:disabled { opacity: 0.25; cursor: default; }
 
     .btn-primary { background: #fff; color: #000; font-weight: 500; }
-
-    .btn-ghost {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
     #file-input { display: none; }
 
@@ -211,7 +268,7 @@
 <body>
 
 <header>
-  <h1>Instagram Framer</h1>
+  <h1>Crop dat</h1>
   <p>1080 × 1350 px</p>
 </header>
 
@@ -225,54 +282,30 @@
   <div class="section">
     <div class="section-label">Photo</div>
     <div class="layout-row single">
-
       <button class="layout-btn active" data-layout="fill">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Plein</span>
       </button>
-
       <button class="layout-btn" data-layout="margin">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/>
-          <rect x="14" y="17" width="80" height="101" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/><rect x="14" y="17" width="80" height="101" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Marges</span>
       </button>
-
       <button class="layout-btn" data-layout="polaroid">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/>
-          <rect x="12" y="10" width="84" height="90" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/><rect x="12" y="10" width="84" height="90" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Polaroid</span>
       </button>
-
       <button class="layout-btn" data-layout="banner-bottom">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/>
-          <rect x="1" y="1" width="106" height="94" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/><rect x="1" y="1" width="106" height="94" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Bas</span>
       </button>
-
       <button class="layout-btn" data-layout="banner-top">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/>
-          <rect x="1" y="40" width="106" height="94" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/><rect x="1" y="40" width="106" height="94" rx="3" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Haut</span>
       </button>
-
       <button class="layout-btn" data-layout="square">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/>
-          <rect x="1" y="14" width="106" height="107" rx="0" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="133" rx="3" stroke="#fff" stroke-width="1.5" opacity=".25"/><rect x="1" y="14" width="106" height="107" rx="0" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>Carré</span>
       </button>
-
     </div>
   </div>
 
@@ -280,76 +313,62 @@
   <div class="section">
     <div class="section-label">Grille</div>
     <div class="layout-row grids">
-
-      <!-- 2 slots -->
       <button class="layout-btn" data-layout="grid2">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="1" y="70" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="1" y="70" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>2</span>
       </button>
-
-      <!-- 3 slots: 1 top + 2 bottom -->
       <button class="layout-btn" data-layout="grid3">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="1" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="57" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="106" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="1" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="57" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>3</span>
       </button>
-
-      <!-- 4 slots: 2x2 -->
       <button class="layout-btn" data-layout="grid4">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="57" y="1" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="1" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="57" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="57" y="1" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="1" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="57" y="70" width="50" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>4</span>
       </button>
-
-      <!-- 6 slots: 3x2 -->
       <button class="layout-btn" data-layout="grid6">
-        <svg viewBox="0 0 108 135" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1"  y="1"  width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="38" y="1"  width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="75" y="1"  width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="1"  y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="38" y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-          <rect x="75" y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/>
-        </svg>
+        <svg viewBox="0 0 108 135" fill="none"><rect x="1" y="1" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="38" y="1" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="75" y="1" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="1" y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="38" y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/><rect x="75" y="70" width="32" height="64" rx="2" fill="#fff" opacity=".18" stroke="#fff" stroke-width="2"/></svg>
         <span>6</span>
       </button>
-
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- Zoom + active slot info -->
+  <!-- Zoom -->
   <div class="section">
-    <div class="section-label" style="display:flex;align-items:center;gap:8px;">
+    <div class="section-label" style="display:flex;align-items:center;">
       <span>Ajustement</span>
       <span id="slot-badge"></span>
     </div>
-    <div class="slider-row">
+    <div class="zoom-row">
       <span class="slider-label">Zoom</span>
-      <input type="range" id="zoom" min="10" max="400" value="100" step="1">
-      <span class="slider-value" id="zoom-val">100%</span>
+      <input type="range" id="zoom" min="1" max="400" value="100" step="1">
+      <div class="zoom-input-wrap">
+        <input type="number" id="zoom-val" min="1" max="400" value="100">
+        <span class="zoom-unit">%</span>
+      </div>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- Fond -->
+  <!-- Background -->
   <div class="section">
     <div class="section-label">Fond</div>
     <div class="color-row">
       <input type="color" id="bg-color" value="#ffffff">
       <span class="color-label" id="color-hex">#ffffff</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Export quality -->
+  <div class="section">
+    <div class="section-label">Qualité export</div>
+    <div class="quality-toggle">
+      <button class="quality-btn" data-quality="720">720 px</button>
+      <button class="quality-btn active" data-quality="1080">1080 px</button>
     </div>
   </div>
 
@@ -361,7 +380,7 @@
       <button class="btn-ghost" id="btn-upload">Choisir une photo</button>
       <button class="btn-ghost" id="btn-reset" disabled>Recadrer</button>
     </div>
-    <button class="btn-primary" id="btn-export" disabled>Exporter PNG · 1080 × 1350</button>
+    <button class="btn-primary" id="btn-export" disabled>Exporter PNG</button>
   </div>
 
   <p class="hint">Scroll ou pince pour zoomer · Glisse pour repositionner<br>Magnétisme actif près du centre</p>
@@ -371,12 +390,11 @@
 <input type="file" id="file-input" accept="image/*" multiple>
 
 <script>
-  /* ── Canvas & DOM refs ── */
   const canvas     = document.getElementById('preview');
   const ctx        = canvas.getContext('2d');
   const wrap       = document.getElementById('stage-wrap');
   const zoomSlider = document.getElementById('zoom');
-  const zoomVal    = document.getElementById('zoom-val');
+  const zoomInput  = document.getElementById('zoom-val');
   const bgInput    = document.getElementById('bg-color');
   const hexLabel   = document.getElementById('color-hex');
   const btnUpload  = document.getElementById('btn-upload');
@@ -385,32 +403,28 @@
   const fileInput  = document.getElementById('file-input');
   const slotBadge  = document.getElementById('slot-badge');
   const layoutBtns = document.querySelectorAll('.layout-btn');
+  const qualityBtns = document.querySelectorAll('.quality-btn');
 
-  const W = 1080, H = 1350;
-  const GAP = 6;
-  const SNAP_PX = 38; // canvas pixels before snap kicks in
+  const W = 1080, H = 1350, GAP = 6, SNAP_PX = 38;
 
   /* ── Slot geometry ── */
   function getSlots(layout) {
-    const hw = Math.floor((W - GAP) / 2);   // 537
-    const hh = Math.floor((H - GAP) / 2);   // 672
-    const tw = Math.floor((W - 2*GAP) / 3); // 356
-    const r2 = W - hw - GAP;  // right half (accounts for rounding)
-    const b2 = H - hh - GAP;  // bottom half
-    const r3 = W - tw - GAP - tw - GAP; // third col remainder
+    const hw = Math.floor((W - GAP) / 2);
+    const hh = Math.floor((H - GAP) / 2);
+    const tw = Math.floor((W - 2*GAP) / 3);
+    const r2 = W - hw - GAP;
+    const b2 = H - hh - GAP;
+    const r3 = W - tw - GAP - tw - GAP;
     switch (layout) {
       case 'fill':          return [[0,0,W,H]];
       case 'margin':        return [[80,80,W-160,H-160]];
       case 'polaroid':      return [[80,80,W-160,H-320]];
-      case 'banner-bottom': return [[0,0,W,hh*2-6]];   // upper 2/3 approx
+      case 'banner-bottom': return [[0,0,W,hh*2-6]];
       case 'banner-top':    return [[0,H-hh*2+6,W,hh*2-6]];
       case 'square':        return [[0,Math.floor((H-W)/2),W,W]];
       case 'grid2':         return [[0,0,W,hh],[0,hh+GAP,W,b2]];
       case 'grid3':         return [[0,0,W,hh],[0,hh+GAP,hw,b2],[hw+GAP,hh+GAP,r2,b2]];
-      case 'grid4':         return [
-        [0,0,hw,hh],[hw+GAP,0,r2,hh],
-        [0,hh+GAP,hw,b2],[hw+GAP,hh+GAP,r2,b2]
-      ];
+      case 'grid4':         return [[0,0,hw,hh],[hw+GAP,0,r2,hh],[0,hh+GAP,hw,b2],[hw+GAP,hh+GAP,r2,b2]];
       case 'grid6':         return [
         [0,0,tw,hh],[tw+GAP,0,tw,hh],[tw+GAP+tw+GAP,0,r3,hh],
         [0,hh+GAP,tw,b2],[tw+GAP,hh+GAP,tw,b2],[tw+GAP+tw+GAP,hh+GAP,r3,b2]
@@ -421,31 +435,35 @@
 
   /* ── State ── */
   let currentLayout = 'fill';
-  let slots = [null]; // each: { img, scale, ox, oy } or null
+  let slots = [null];
   let activeSlot = 0;
   let pendingSlot = 0;
   let bgColor = '#ffffff';
-  let snapH = false, snapV = false; // snap state for visual guides
+  let exportQuality = 1080;
+  let snapH = false, snapV = false;
 
-  function numSlots() { return getSlots(currentLayout).length; }
+  const numSlots = () => getSlots(currentLayout).length;
+  const hasAnyImage = () => slots.some(s => s && s.img);
 
-  function hasAnyImage() { return slots.some(s => s && s.img); }
+  /* ── Sync zoom controls ── */
+  function setZoomDisplay(val) {
+    const v = Math.round(val);
+    zoomSlider.value = v;
+    zoomInput.value = v;
+  }
 
   function updateUI() {
-    const n = numSlots();
     const active = slots[activeSlot];
     btnReset.disabled = !(active && active.img);
     btnExport.disabled = !hasAnyImage();
-    const hasImg = wrap.classList.toggle('has-image', hasAnyImage());
-    if (n > 1) {
-      slotBadge.textContent = `zone ${activeSlot + 1} / ${n}`;
-    } else {
-      slotBadge.textContent = '';
-    }
-    if (active && active.img) {
-      zoomSlider.value = Math.round(active.scale * 100);
-      zoomVal.textContent = Math.round(active.scale * 100) + '%';
-    }
+    wrap.classList.toggle('has-image', hasAnyImage());
+    const n = numSlots();
+    slotBadge.textContent = n > 1 ? `zone ${activeSlot + 1} / ${n}` : '';
+    if (active && active.img) setZoomDisplay(active.scale * 100);
+
+    // Export button label
+    const dim = exportQuality === 720 ? '720 × 900' : '1080 × 1350';
+    btnExport.textContent = `Exporter PNG · ${dim}`;
   }
 
   /* ── Draw ── */
@@ -458,117 +476,95 @@
 
     slotRects.forEach(([sx, sy, sw, sh], i) => {
       const data = slots[i];
-
       ctx.save();
       ctx.beginPath();
       ctx.rect(sx, sy, sw, sh);
       ctx.clip();
-
       if (data && data.img) {
         ctx.drawImage(data.img, data.ox, data.oy, data.img.width * data.scale, data.img.height * data.scale);
       } else if (!forExport) {
-        // Empty slot placeholder
         ctx.fillStyle = 'rgba(255,255,255,0.04)';
         ctx.fillRect(sx, sy, sw, sh);
-        const cx = sx + sw / 2, cy = sy + sh / 2, arm = Math.min(sw, sh) * 0.12;
+        const cx = sx + sw/2, cy = sy + sh/2, arm = Math.min(sw,sh)*0.12;
         ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
+        ctx.lineWidth = 4; ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(cx - arm, cy); ctx.lineTo(cx + arm, cy);
-        ctx.moveTo(cx, cy - arm); ctx.lineTo(cx, cy + arm);
+        ctx.moveTo(cx-arm, cy); ctx.lineTo(cx+arm, cy);
+        ctx.moveTo(cx, cy-arm); ctx.lineTo(cx, cy+arm);
         ctx.stroke();
       }
-
       ctx.restore();
     });
 
     if (!forExport) {
-      // Active slot border (multi-slot only)
       if (slotRects.length > 1) {
-        const [sx, sy, sw, sh] = slotRects[activeSlot];
+        const [sx,sy,sw,sh] = slotRects[activeSlot];
         ctx.strokeStyle = 'rgba(255,255,255,0.5)';
         ctx.lineWidth = 3;
-        ctx.strokeRect(sx + 1.5, sy + 1.5, sw - 3, sh - 3);
+        ctx.strokeRect(sx+1.5, sy+1.5, sw-3, sh-3);
       }
-
-      // Snap guides
-      const activeRect = slotRects[activeSlot];
-      if (activeRect) {
-        const [sx, sy, sw, sh] = activeRect;
-        const cx = sx + sw / 2, cy = sy + sh / 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      const ar = slotRects[activeSlot];
+      if (ar) {
+        const [sx,sy,sw,sh] = ar;
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
         ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 6]);
-        if (snapV) {
-          ctx.beginPath(); ctx.moveTo(sx, cy); ctx.lineTo(sx + sw, cy); ctx.stroke();
-        }
-        if (snapH) {
-          ctx.beginPath(); ctx.moveTo(cx, sy); ctx.lineTo(cx, sy + sh); ctx.stroke();
-        }
+        ctx.setLineDash([6,6]);
+        if (snapV) { ctx.beginPath(); ctx.moveTo(sx,sy+sh/2); ctx.lineTo(sx+sw,sy+sh/2); ctx.stroke(); }
+        if (snapH) { ctx.beginPath(); ctx.moveTo(sx+sw/2,sy); ctx.lineTo(sx+sw/2,sy+sh); ctx.stroke(); }
         ctx.setLineDash([]);
       }
     }
   }
 
-  /* ── Fit image to slot ── */
-  function fitSlot(slotIndex) {
-    const data = slots[slotIndex];
+  /* ── Fit image ── */
+  function fitSlot(i) {
+    const data = slots[i];
     if (!data || !data.img) return;
-    const [sx, sy, sw, sh] = getSlots(currentLayout)[slotIndex];
-    const scaleW = sw / data.img.width;
-    const scaleH = sh / data.img.height;
-    data.scale = Math.max(scaleW, scaleH);
-    data.ox = sx + (sw - data.img.width * data.scale) / 2;
-    data.oy = sy + (sh - data.img.height * data.scale) / 2;
+    const [sx,sy,sw,sh] = getSlots(currentLayout)[i];
+    const s = Math.max(sw/data.img.width, sh/data.img.height);
+    data.scale = s;
+    data.ox = sx + (sw - data.img.width*s)/2;
+    data.oy = sy + (sh - data.img.height*s)/2;
+  }
+
+  /* ── Snap ── */
+  function applySnap(i) {
+    const data = slots[i];
+    if (!data || !data.img) return;
+    const [sx,sy,sw,sh] = getSlots(currentLayout)[i];
+    const iw = data.img.width*data.scale, ih = data.img.height*data.scale;
+    const icx = data.ox + iw/2, icy = data.oy + ih/2;
+    const scx = sx+sw/2, scy = sy+sh/2;
+    snapH = Math.abs(icx-scx) < SNAP_PX;
+    snapV = Math.abs(icy-scy) < SNAP_PX;
+    if (snapH) data.ox = scx - iw/2;
+    if (snapV) data.oy = scy - ih/2;
   }
 
   /* ── Load image ── */
   function loadImage(file, slotIndex) {
     if (!file || !file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       slots[slotIndex] = { img, scale: 1, ox: 0, oy: 0 };
       fitSlot(slotIndex);
       activeSlot = slotIndex;
-      draw();
-      updateUI();
+      draw(); updateUI();
     };
-    img.src = url;
+    img.src = URL.createObjectURL(file);
   }
 
-  /* ── Find slot at canvas coords ── */
+  /* ── Slot at canvas coords ── */
+  const ratio = () => canvas.getBoundingClientRect().width / W;
+
   function slotAt(cx, cy) {
     const rects = getSlots(currentLayout);
-    for (let i = rects.length - 1; i >= 0; i--) {
-      const [sx, sy, sw, sh] = rects[i];
-      if (cx >= sx && cx <= sx + sw && cy >= sy && cy <= sy + sh) return i;
+    for (let i = rects.length-1; i >= 0; i--) {
+      const [sx,sy,sw,sh] = rects[i];
+      if (cx>=sx && cx<=sx+sw && cy>=sy && cy<=sy+sh) return i;
     }
     return 0;
   }
-
-  /* ── Apply snap ── */
-  function applySnap(slotIndex) {
-    const data = slots[slotIndex];
-    if (!data || !data.img) return;
-    const [sx, sy, sw, sh] = getSlots(currentLayout)[slotIndex];
-    const imgW = data.img.width * data.scale;
-    const imgH = data.img.height * data.scale;
-    const imgCX = data.ox + imgW / 2;
-    const imgCY = data.oy + imgH / 2;
-    const slotCX = sx + sw / 2;
-    const slotCY = sy + sh / 2;
-
-    snapH = Math.abs(imgCX - slotCX) < SNAP_PX;
-    snapV = Math.abs(imgCY - slotCY) < SNAP_PX;
-
-    if (snapH) data.ox = slotCX - imgW / 2;
-    if (snapV) data.oy = slotCY - imgH / 2;
-  }
-
-  /* ── Canvas ratio ── */
-  const ratio = () => canvas.getBoundingClientRect().width / W;
 
   /* ── Pointer drag ── */
   let dragging = false, lastX = 0, lastY = 0, dragSlot = 0;
@@ -576,29 +572,17 @@
   wrap.addEventListener('pointerdown', e => {
     const r = ratio();
     const rect = canvas.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) / r;
-    const cy = (e.clientY - rect.top) / r;
+    const cx = (e.clientX-rect.left)/r, cy = (e.clientY-rect.top)/r;
     const hit = slotAt(cx, cy);
-
     if (!slots[hit] || !slots[hit].img) {
-      // Empty slot: open file picker
-      pendingSlot = hit;
-      activeSlot = hit;
-      updateUI();
-      draw();
-      fileInput.click();
-      return;
+      pendingSlot = hit; activeSlot = hit;
+      updateUI(); draw(); fileInput.click(); return;
     }
-
-    activeSlot = hit;
-    dragging = true;
-    dragSlot = hit;
-    lastX = e.clientX;
-    lastY = e.clientY;
+    activeSlot = hit; dragging = true; dragSlot = hit;
+    lastX = e.clientX; lastY = e.clientY;
     snapH = false; snapV = false;
     wrap.setPointerCapture(e.pointerId);
-    updateUI();
-    draw();
+    updateUI(); draw();
   });
 
   wrap.addEventListener('pointermove', e => {
@@ -606,41 +590,31 @@
     const r = ratio();
     const data = slots[dragSlot];
     if (!data) return;
-    data.ox += (e.clientX - lastX) / r;
-    data.oy += (e.clientY - lastY) / r;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    applySnap(dragSlot);
-    draw();
+    data.ox += (e.clientX-lastX)/r;
+    data.oy += (e.clientY-lastY)/r;
+    lastX = e.clientX; lastY = e.clientY;
+    applySnap(dragSlot); draw();
   });
 
-  wrap.addEventListener('pointerup', () => {
-    dragging = false;
-    snapH = false; snapV = false;
-    draw();
-  });
+  wrap.addEventListener('pointerup', () => { dragging=false; snapH=false; snapV=false; draw(); });
 
   /* ── Scroll zoom ── */
   wrap.addEventListener('wheel', e => {
     e.preventDefault();
     const r = ratio();
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / r;
-    const my = (e.clientY - rect.top) / r;
+    const mx = (e.clientX-rect.left)/r, my = (e.clientY-rect.top)/r;
     const hit = slotAt(mx, my);
     const data = slots[hit];
     if (!data || !data.img) return;
     activeSlot = hit;
-    const delta = e.deltaY < 0 ? 1.08 : 0.93;
-    const newScale = Math.max(0.1, Math.min(data.scale * delta, 4));
-    data.ox = mx - (mx - data.ox) * (newScale / data.scale);
-    data.oy = my - (my - data.oy) * (newScale / data.scale);
-    data.scale = newScale;
-    zoomSlider.value = Math.round(newScale * 100);
-    zoomVal.textContent = Math.round(newScale * 100) + '%';
-    applySnap(hit);
-    draw();
-    updateUI();
+    const delta = e.deltaY < 0 ? 1.04 : 0.96; // finer steps
+    const ns = Math.max(0.01, Math.min(data.scale*delta, 4));
+    data.ox = mx-(mx-data.ox)*(ns/data.scale);
+    data.oy = my-(my-data.oy)*(ns/data.scale);
+    data.scale = ns;
+    setZoomDisplay(ns*100);
+    applySnap(hit); draw(); updateUI();
   }, { passive: false });
 
   /* ── Pinch zoom ── */
@@ -648,78 +622,58 @@
 
   wrap.addEventListener('touchstart', e => {
     if (e.touches.length === 2) {
-      const r = ratio();
-      const rect = canvas.getBoundingClientRect();
-      const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / r;
-      const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top) / r;
+      const r = ratio(), rect = canvas.getBoundingClientRect();
+      const mx = ((e.touches[0].clientX+e.touches[1].clientX)/2-rect.left)/r;
+      const my = ((e.touches[0].clientY+e.touches[1].clientY)/2-rect.top)/r;
       pinchSlot = slotAt(mx, my);
     }
   }, { passive: true });
 
   wrap.addEventListener('touchmove', e => {
-    if (!slots[pinchSlot] || !slots[pinchSlot].img || e.touches.length !== 2) {
-      lastPinchDist = null; return;
-    }
+    if (!slots[pinchSlot]?.img || e.touches.length!==2) { lastPinchDist=null; return; }
     e.preventDefault();
-    const [t1, t2] = e.touches;
-    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-    if (lastPinchDist === null) { lastPinchDist = dist; return; }
-    const r = ratio();
-    const rect = canvas.getBoundingClientRect();
-    const mx = ((t1.clientX + t2.clientX) / 2 - rect.left) / r;
-    const my = ((t1.clientY + t2.clientY) / 2 - rect.top) / r;
-    const delta = dist / lastPinchDist;
+    const [t1,t2] = e.touches;
+    const dist = Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY);
+    if (lastPinchDist===null) { lastPinchDist=dist; return; }
+    const r = ratio(), rect = canvas.getBoundingClientRect();
+    const mx = ((t1.clientX+t2.clientX)/2-rect.left)/r;
+    const my = ((t1.clientY+t2.clientY)/2-rect.top)/r;
     const data = slots[pinchSlot];
-    const newScale = Math.max(0.1, Math.min(data.scale * delta, 4));
-    data.ox = mx - (mx - data.ox) * (newScale / data.scale);
-    data.oy = my - (my - data.oy) * (newScale / data.scale);
-    data.scale = newScale;
+    const ns = Math.max(0.01, Math.min(data.scale*(dist/lastPinchDist), 4));
+    data.ox = mx-(mx-data.ox)*(ns/data.scale);
+    data.oy = my-(my-data.oy)*(ns/data.scale);
+    data.scale = ns;
     lastPinchDist = dist;
-    applySnap(pinchSlot);
-    draw();
-    updateUI();
+    setZoomDisplay(ns*100);
+    applySnap(pinchSlot); draw(); updateUI();
   }, { passive: false });
 
-  wrap.addEventListener('touchend', () => { lastPinchDist = null; });
+  wrap.addEventListener('touchend', () => { lastPinchDist=null; });
 
   /* ── Drag & drop ── */
-  wrap.addEventListener('dragover', e => { e.preventDefault(); });
+  wrap.addEventListener('dragover', e => e.preventDefault());
   wrap.addEventListener('drop', e => {
     e.preventDefault();
-    const r = ratio();
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) / r;
-    const cy = (e.clientY - rect.top) / r;
+    const r = ratio(), rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX-rect.left)/r, cy = (e.clientY-rect.top)/r;
     const hit = slotAt(cx, cy);
-    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
-    files.forEach((file, i) => {
-      if (hit + i < numSlots()) loadImage(file, hit + i);
+    [...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach((file,i)=>{
+      if (hit+i < numSlots()) loadImage(file, hit+i);
     });
   });
 
   /* ── Layout buttons ── */
   layoutBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const layout = btn.dataset.layout;
-      const prevCount = numSlots();
-      currentLayout = layout;
-      const newCount = numSlots();
-
-      if (newCount !== prevCount) {
-        // Resize slots array
-        slots = Array.from({ length: newCount }, (_, i) => slots[i] || null);
-      }
-
-      // Refit all existing images to their new slot rects
-      slots.forEach((_, i) => fitSlot(i));
-
-      activeSlot = Math.min(activeSlot, newCount - 1);
-
-      layoutBtns.forEach(b => b.classList.remove('active'));
+      currentLayout = btn.dataset.layout;
+      const nc = numSlots();
+      slots = Array.from({length:nc},(_,i)=>slots[i]||null);
+      slots.forEach((_,i)=>fitSlot(i));
+      activeSlot = Math.min(activeSlot, nc-1);
+      layoutBtns.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      snapH = false; snapV = false;
-      draw();
-      updateUI();
+      snapH=false; snapV=false;
+      draw(); updateUI();
     });
   });
 
@@ -727,15 +681,43 @@
   zoomSlider.addEventListener('input', () => {
     const data = slots[activeSlot];
     if (!data || !data.img) return;
-    const [sx, sy, sw, sh] = getSlots(currentLayout)[activeSlot];
-    const cx = sx + sw / 2, cy = sy + sh / 2;
-    const newScale = zoomSlider.value / 100;
-    data.ox = cx - (cx - data.ox) * (newScale / data.scale);
-    data.oy = cy - (cy - data.oy) * (newScale / data.scale);
-    data.scale = newScale;
-    zoomVal.textContent = Math.round(newScale * 100) + '%';
-    applySnap(activeSlot);
-    draw();
+    const [sx,sy,sw,sh] = getSlots(currentLayout)[activeSlot];
+    const cx=sx+sw/2, cy=sy+sh/2;
+    const ns = zoomSlider.value/100;
+    data.ox = cx-(cx-data.ox)*(ns/data.scale);
+    data.oy = cy-(cy-data.oy)*(ns/data.scale);
+    data.scale = ns;
+    zoomInput.value = Math.round(ns*100);
+    applySnap(activeSlot); draw();
+  });
+
+  /* ── Zoom number input ── */
+  function applyZoomInput() {
+    const data = slots[activeSlot];
+    if (!data || !data.img) return;
+    let v = Math.max(1, Math.min(400, parseInt(zoomInput.value)||100));
+    zoomInput.value = v;
+    const [sx,sy,sw,sh] = getSlots(currentLayout)[activeSlot];
+    const cx=sx+sw/2, cy=sy+sh/2;
+    const ns = v/100;
+    data.ox = cx-(cx-data.ox)*(ns/data.scale);
+    data.oy = cy-(cy-data.oy)*(ns/data.scale);
+    data.scale = ns;
+    zoomSlider.value = v;
+    applySnap(activeSlot); draw();
+  }
+
+  zoomInput.addEventListener('change', applyZoomInput);
+  zoomInput.addEventListener('keydown', e => { if (e.key==='Enter') { applyZoomInput(); zoomInput.blur(); } });
+
+  /* ── Quality toggle ── */
+  qualityBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      exportQuality = parseInt(btn.dataset.quality);
+      qualityBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      updateUI();
+    });
   });
 
   /* ── Background color ── */
@@ -747,38 +729,36 @@
 
   /* ── File input ── */
   fileInput.addEventListener('change', () => {
-    const files = [...fileInput.files].filter(f => f.type.startsWith('image/'));
-    files.forEach((file, i) => {
-      if (pendingSlot + i < numSlots()) loadImage(file, pendingSlot + i);
+    [...fileInput.files].filter(f=>f.type.startsWith('image/')).forEach((file,i)=>{
+      if (pendingSlot+i < numSlots()) loadImage(file, pendingSlot+i);
     });
-    fileInput.value = '';
+    fileInput.value='';
   });
 
   /* ── Buttons ── */
-  btnUpload.addEventListener('click', () => {
-    pendingSlot = activeSlot;
-    fileInput.click();
-  });
-
-  btnReset.addEventListener('click', () => {
-    fitSlot(activeSlot);
-    snapH = false; snapV = false;
-    draw();
-    updateUI();
-  });
+  btnUpload.addEventListener('click', () => { pendingSlot=activeSlot; fileInput.click(); });
+  btnReset.addEventListener('click', () => { fitSlot(activeSlot); snapH=false; snapV=false; draw(); updateUI(); });
 
   btnExport.addEventListener('click', () => {
     draw(true);
+    let exportCanvas = canvas;
+    if (exportQuality === 720) {
+      const tw = 720, th = 900;
+      const offscreen = document.createElement('canvas');
+      offscreen.width = tw; offscreen.height = th;
+      offscreen.getContext('2d').drawImage(canvas, 0, 0, tw, th);
+      exportCanvas = offscreen;
+    }
     const link = document.createElement('a');
-    link.download = 'instagram-1080x1350.png';
-    link.href = canvas.toDataURL('image/png');
+    const dim = exportQuality === 720 ? '720x900' : '1080x1350';
+    link.download = `cropdat-${dim}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
     link.click();
     draw(false);
   });
 
   /* ── Init ── */
-  draw();
-  updateUI();
+  draw(); updateUI();
 </script>
 </body>
 </html>
